@@ -1,0 +1,5 @@
+This is a placeholder. You need to add an actual beep.mp3 file here.
+You can:
+1. Download a beep sound from freesound.org
+2. Use an online tone generator
+3. Record a simple beep sound
