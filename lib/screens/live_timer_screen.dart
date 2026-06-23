@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import '../models/workout_model.dart';
 import '../services/voice_service_new.dart';
@@ -88,8 +87,7 @@ class _LiveTimerScreenState extends State<LiveTimerScreen>
     _phaseFade = CurvedAnimation(parent: _phaseCtrl, curve: Curves.easeOut);
     _phaseCtrl.forward();
 
-    _loadSettings();
-    _voice.init().then((_) async {
+    _loadSettings().then((_) async {
       await _voice.announceWorkoutStart(
         widget.workout.name,
         widget.workout.rounds,
@@ -119,18 +117,13 @@ class _LiveTimerScreenState extends State<LiveTimerScreen>
   }
 
   Future<void> _loadSettings() async {
-    final prefs = await SharedPreferences.getInstance();
     await _audio.init();
-    await _voice.init();
+    await _voice.init(); // single init — guarded against double-call
+    if (!mounted) return;
     setState(() {
-      _voiceEnabled = prefs.getBool('voice_enabled') ?? true;
-      _soundEnabled = prefs.getBool('sound_enabled') ?? true;
-      _voice.setEnabled(_voiceEnabled);
-      _audio.setEnabled(_soundEnabled);
+      _voiceEnabled = _voice.enabled;
+      _soundEnabled = true;
     });
-    debugPrint(
-      'LiveTimer: Loaded settings - voice: $_voiceEnabled, sound: $_soundEnabled',
-    );
   }
 
   @override

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import '../theme/app_theme.dart';
-import '../services/voice_service_new.dart';
+
 import '../services/audio_service.dart';
+import '../services/voice_service_new.dart';
+import '../theme/app_theme.dart';
 
 class VoiceSettingsScreenNew extends StatefulWidget {
   const VoiceSettingsScreenNew({super.key});
@@ -55,17 +56,21 @@ class _VoiceSettingsScreenNewState extends State<VoiceSettingsScreenNew> {
     setState(() => _testing = true);
     debugPrint('=== Test Voice Started ===');
     debugPrint('Announcement Mode: $_announcementMode');
-    
-    if (_announcementMode == AnnouncementMode.voiceOnly || _announcementMode == AnnouncementMode.voiceAndBeeps) {
+
+    if (_announcementMode == AnnouncementMode.voiceOnly ||
+        _announcementMode == AnnouncementMode.voiceAndBeeps) {
       debugPrint('Playing voice...');
-      await _voice.speak('This is a test of the voice guidance system. Workout starting in 3, 2, 1.');
+      await _voice.speak(
+        'This is a test of the voice guidance system. Workout starting in 3, 2, 1.',
+      );
       // Wait for voice to complete before playing beeps
       if (_announcementMode == AnnouncementMode.voiceAndBeeps) {
         await Future.delayed(const Duration(milliseconds: 500));
       }
     }
-    
-    if (_announcementMode == AnnouncementMode.beepsOnly || _announcementMode == AnnouncementMode.voiceAndBeeps) {
+
+    if (_announcementMode == AnnouncementMode.beepsOnly ||
+        _announcementMode == AnnouncementMode.voiceAndBeeps) {
       debugPrint('Playing beeps sequence...');
       await _audio.playCountdownBeep();
       await Future.delayed(const Duration(milliseconds: 400));
@@ -76,7 +81,7 @@ class _VoiceSettingsScreenNewState extends State<VoiceSettingsScreenNew> {
       await _audio.playStartBeep();
       debugPrint('Beeps complete');
     }
-    
+
     debugPrint('=== Test Voice Complete ===');
     setState(() => _testing = false);
   }
@@ -101,9 +106,7 @@ class _VoiceSettingsScreenNewState extends State<VoiceSettingsScreenNew> {
           ),
         ),
         centerTitle: true,
-        shape: Border(
-          bottom: BorderSide(color: _borderColor, width: 1),
-        ),
+        shape: Border(bottom: BorderSide(color: _borderColor, width: 1)),
       ),
       body: _loading
           ? Center(
@@ -129,132 +132,133 @@ class _VoiceSettingsScreenNewState extends State<VoiceSettingsScreenNew> {
   }
 
   Widget _buildHeaderSection() => Padding(
-        padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
           children: [
-            Row(
-              children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [_primaryColor, _secondaryColor],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [_primaryColor, _secondaryColor],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: _primaryColor.withOpacity(0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.volume_up_rounded,
+                color: Colors.white,
+                size: 26,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Voice Guidance',
+                    style: TextStyle(
+                      color: _textColor,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
                     ),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: _primaryColor.withOpacity(0.3),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
                   ),
-                  child: const Icon(Icons.volume_up_rounded, color: Colors.white, size: 26),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Voice Guidance',
-                        style: TextStyle(
-                          color: _textColor,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Customize your workout audio experience',
-                        style: TextStyle(
-                          color: _textSecondary,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
+                  const SizedBox(height: 4),
+                  Text(
+                    'Customize your workout audio experience',
+                    style: TextStyle(
+                      color: _textSecondary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         ),
-      );
+      ],
+    ),
+  );
 
   Widget _buildEnabledToggle() => Padding(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-        child: _buildCard(
-          child: SwitchListTile.adaptive(
-            tileColor: Colors.transparent,
-            overlayColor: WidgetStateProperty.all(Colors.transparent),
-            value: _enabled,
-            onChanged: (value) async {
-              setState(() => _enabled = value);
-              await _voice.setEnabled(value);
-            },
-            title: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Padding(
-                padding: const EdgeInsets.only(top: 8.0),
-                child: Text(
-                  'Enable Voice Guidance',
-                  style: TextStyle(
-                    color: _textColor,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
-                  ),
-                ),
+    padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+    child: _buildCard(
+      child: SwitchListTile.adaptive(
+        tileColor: Colors.transparent,
+        overlayColor: WidgetStateProperty.all(Colors.transparent),
+        value: _enabled,
+        onChanged: (value) async {
+          setState(() => _enabled = value);
+          await _voice.setEnabled(value);
+        },
+        title: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: Text(
+              'Enable Voice Guidance',
+              style: TextStyle(
+                color: _textColor,
+                fontWeight: FontWeight.w700,
+                fontSize: 16,
               ),
             ),
-            subtitle: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0,),
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 8.0),
-                child: Text(
-                  'Voice announcements during workouts',
-                  style: TextStyle(
-                    color: _textSecondary,
-                    fontSize: 13,
-                  ),
-                ),
-              ),
-            ),
-            activeThumbColor: _primaryColor,
-            activeTrackColor: _primaryColor.withOpacity(0.3),
-            inactiveThumbColor: _textSecondary,
-            inactiveTrackColor: _borderColor,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 4),
           ),
         ),
-      );
+        subtitle: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 8.0),
+            child: Text(
+              'Voice announcements during workouts',
+              style: TextStyle(color: _textSecondary, fontSize: 13),
+            ),
+          ),
+        ),
+        activeThumbColor: _primaryColor,
+        activeTrackColor: _primaryColor.withOpacity(0.3),
+        inactiveThumbColor: _textSecondary,
+        inactiveTrackColor: _borderColor,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+      ),
+    ),
+  );
 
   Widget _buildAnnouncementTypeSection() => Padding(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-        child: _buildCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
-                child: Text(
-                  'Announcement Type',
-                  style: TextStyle(
-                    color: _textColor,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
+    padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+    child: _buildCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
+            child: Text(
+              'Announcement Type',
+              style: TextStyle(
+                color: _textColor,
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
               ),
-              ...AnnouncementMode.values.map((mode) => _buildModeOption(mode)),
-            ],
+            ),
           ),
-        ),
-      );
+          ...AnnouncementMode.values.map((mode) => _buildModeOption(mode)),
+        ],
+      ),
+    ),
+  );
 
   Widget _buildModeOption(AnnouncementMode mode) {
     final isSelected = _announcementMode == mode;
@@ -264,9 +268,12 @@ class _VoiceSettingsScreenNewState extends State<VoiceSettingsScreenNew> {
         onTap: () async {
           setState(() => _announcementMode = mode);
           await _voice.setAnnouncementMode(mode);
-          final audioType = mode == AnnouncementMode.voiceOnly ? AnnouncementType.voiceOnly
-              : mode == AnnouncementMode.beepsOnly ? AnnouncementType.beepsOnly
-              : mode == AnnouncementMode.voiceAndBeeps ? AnnouncementType.voiceAndBeeps
+          final audioType = mode == AnnouncementMode.voiceOnly
+              ? AnnouncementType.voiceOnly
+              : mode == AnnouncementMode.beepsOnly
+              ? AnnouncementType.beepsOnly
+              : mode == AnnouncementMode.voiceAndBeeps
+              ? AnnouncementType.voiceAndBeeps
               : AnnouncementType.silent;
           await _audio.setAnnouncementType(audioType);
         },
@@ -314,10 +321,7 @@ class _VoiceSettingsScreenNewState extends State<VoiceSettingsScreenNew> {
                     const SizedBox(height: 2),
                     Text(
                       _voice.getAnnouncementModeDescription(mode),
-                      style: TextStyle(
-                        color: _textSecondary,
-                        fontSize: 12,
-                      ),
+                      style: TextStyle(color: _textSecondary, fontSize: 12),
                     ),
                   ],
                 ),
@@ -344,39 +348,40 @@ class _VoiceSettingsScreenNewState extends State<VoiceSettingsScreenNew> {
         ],
       ),
       child: Material(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-          child: child),
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(20),
+        child: child,
+      ),
     );
   }
 
   Widget _buildVoiceTypeSection() => Padding(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-        child: _buildCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
-                child: Text(
-                  'Voice Type',
-                  style: TextStyle(
-                    color: _textColor,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
+    padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+    child: _buildCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
+            child: Text(
+              'Voice Type',
+              style: TextStyle(
+                color: _textColor,
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
               ),
-              ...VoiceType.values.map((type) => _buildVoiceOption(type)),
-            ],
+            ),
           ),
-        ),
-      );
+          ...VoiceType.values.map((type) => _buildVoiceOption(type)),
+        ],
+      ),
+    ),
+  );
 
   Widget _buildVoiceOption(VoiceType type) {
     final isSelected = _voiceType == type;
     final iconColor = isSelected ? _primaryColor : _textSecondary;
-    
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -439,62 +444,59 @@ class _VoiceSettingsScreenNewState extends State<VoiceSettingsScreenNew> {
   }
 
   Widget _buildVoiceControlsSection() => Padding(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-        child: _buildCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
-                child: Text(
-                  'Voice Controls',
-                  style: TextStyle(
-                    color: _textColor,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
+    padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+    child: _buildCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
+            child: Text(
+              'Voice Controls',
+              style: TextStyle(
+                color: _textColor,
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
               ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-                child: Text(
-                  'Adjust the voice settings to your preference',
-                  style: TextStyle(
-                    color: _textSecondary,
-                    fontSize: 13,
-                  ),
-                ),
-              ),
-              _buildVoiceSlider(
-                label: 'Volume',
-                icon: Icons.volume_up_rounded,
-                value: _volume,
-                min: 0.0,
-                max: 1.0,
-                divisions: 10,
-                onChanged: (value) async {
-                  setState(() => _volume = value);
-                  await _voice.setVolume(value);
-                },
-                valueLabel: '${(_volume * 100).toInt()}%',
-              ),
-              _buildVoiceSlider(
-                label: 'Speech Rate',
-                icon: Icons.speed_rounded,
-                value: _speechRate,
-                min: 0.1,
-                max: 2.0,
-                divisions: 19,
-                onChanged: (value) async {
-                  setState(() => _speechRate = value);
-                  await _voice.setSpeechRate(value);
-                },
-                valueLabel: '${_speechRate.toStringAsFixed(1)}x',
-              ),
-            ],
+            ),
           ),
-        ),
-      );
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+            child: Text(
+              'Adjust the voice settings to your preference',
+              style: TextStyle(color: _textSecondary, fontSize: 13),
+            ),
+          ),
+          _buildVoiceSlider(
+            label: 'Volume',
+            icon: Icons.volume_up_rounded,
+            value: _volume,
+            min: 0.0,
+            max: 1.0,
+            divisions: 10,
+            onChanged: (value) async {
+              setState(() => _volume = value);
+              await _voice.setVolume(value);
+            },
+            valueLabel: '${(_volume * 100).toInt()}%',
+          ),
+          _buildVoiceSlider(
+            label: 'Speech Rate',
+            icon: Icons.speed_rounded,
+            value: _speechRate,
+            min: 0.1,
+            max: 2.0,
+            divisions: 19,
+            onChanged: (value) async {
+              setState(() => _speechRate = value);
+              await _voice.setSpeechRate(value);
+            },
+            valueLabel: '${_speechRate.toStringAsFixed(1)}x',
+          ),
+        ],
+      ),
+    ),
+  );
 
   Widget _buildVoiceSlider({
     required String label,
@@ -560,102 +562,105 @@ class _VoiceSettingsScreenNewState extends State<VoiceSettingsScreenNew> {
   }
 
   Widget _buildTestButton() => Padding(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            gradient: LinearGradient(
-              colors: [_primaryColor, _secondaryColor],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: _primaryColor.withOpacity(0.4),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
+    padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+    child: Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        gradient: LinearGradient(
+          colors: [_primaryColor, _secondaryColor],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: _primaryColor.withOpacity(0.4),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: _testing ? null : _testVoice,
-              borderRadius: BorderRadius.circular(16),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 24),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (_testing)
-                      SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
-                          backgroundColor: Colors.white.withOpacity(0.3),
-                        ),
-                      )
-                    else
-                      const Icon(Icons.play_circle_filled_rounded, color: Colors.white, size: 24),
-                    const SizedBox(width: 12),
-                    Text(
-                      _testing ? 'Testing Voice...' : 'Test Voice Settings',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _testing ? null : _testVoice,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 24),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (_testing)
+                  SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                        Colors.white,
                       ),
+                      backgroundColor: Colors.white.withOpacity(0.3),
                     ),
-                  ],
+                  )
+                else
+                  const Icon(
+                    Icons.play_circle_filled_rounded,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                const SizedBox(width: 12),
+                Text(
+                  _testing ? 'Testing Voice...' : 'Test Voice Settings',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
         ),
-      );
+      ),
+    ),
+  );
 
   Widget _buildAnnouncementsList() => Padding(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-        child: _buildCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
-                child: Text(
-                  'Voice Announcements',
-                  style: TextStyle(
-                    color: _textColor,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
+    padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+    child: _buildCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
+            child: Text(
+              'Voice Announcements',
+              style: TextStyle(
+                color: _textColor,
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
               ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                child: Text(
-                  'All voice features included:',
-                  style: TextStyle(
-                    color: _textSecondary,
-                    fontSize: 13,
-                  ),
-                ),
-              ),
-              _buildAnnouncementItem('Workout start with details'),
-              _buildAnnouncementItem('Round start and end'),
-              _buildAnnouncementItem('Set start and end with names'),
-              _buildAnnouncementItem('Rest periods'),
-              _buildAnnouncementItem('Time remaining (10s, 5s, 3-2-1)'),
-              _buildAnnouncementItem('Halfway point for long sets'),
-              _buildAnnouncementItem('Pause and resume'),
-              _buildAnnouncementItem('Workout completion with stats'),
-              const SizedBox(height: 16),
-            ],
+            ),
           ),
-        ),
-      );
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: Text(
+              'All voice features included:',
+              style: TextStyle(color: _textSecondary, fontSize: 13),
+            ),
+          ),
+          _buildAnnouncementItem('Workout start with details'),
+          _buildAnnouncementItem('Round start and end'),
+          _buildAnnouncementItem('Set start and end with names'),
+          _buildAnnouncementItem('Rest periods'),
+          _buildAnnouncementItem('Time remaining (10s, 5s, 3-2-1)'),
+          _buildAnnouncementItem('Halfway point for long sets'),
+          _buildAnnouncementItem('Pause and resume'),
+          _buildAnnouncementItem('Workout completion with stats'),
+          const SizedBox(height: 16),
+        ],
+      ),
+    ),
+  );
 
   Widget _buildAnnouncementItem(String text) {
     return Padding(
@@ -670,11 +675,7 @@ class _VoiceSettingsScreenNewState extends State<VoiceSettingsScreenNew> {
               shape: BoxShape.circle,
               border: Border.all(color: _accentColor.withOpacity(0.4)),
             ),
-            child: Icon(
-              Icons.check_rounded,
-              color: _successColor,
-              size: 14,
-            ),
+            child: Icon(Icons.check_rounded, color: _successColor, size: 14),
           ),
           const SizedBox(width: 12),
           Expanded(

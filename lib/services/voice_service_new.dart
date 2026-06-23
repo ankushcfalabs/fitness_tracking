@@ -1,5 +1,6 @@
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'english_voice_service.dart';
 
 enum AnnouncementMode {
   voiceOnly,
@@ -21,8 +22,9 @@ class VoiceServiceNew {
   VoiceServiceNew._internal();
 
   final FlutterTts _tts = FlutterTts();
+  final EnglishVoiceService _englishVoice = EnglishVoiceService();
   bool _enabled = true;
-  double _speechRate = 0.52;
+  double _speechRate = 0.45;
   double _volume = 1.0;
   String _language = 'en-IN';
   List<dynamic> _availableVoices = [];
@@ -42,7 +44,11 @@ class VoiceServiceNew {
   bool get shouldPlayVoice => _enabled && (_announcementMode == AnnouncementMode.voiceOnly || _announcementMode == AnnouncementMode.voiceAndBeeps);
   bool get shouldPlayBeeps => _enabled && (_announcementMode == AnnouncementMode.beepsOnly || _announcementMode == AnnouncementMode.voiceAndBeeps);
 
+  bool _initialized = false;
+
   Future<void> init() async {
+    if (_initialized) return; // prevent double-init race condition
+    _initialized = true;
     await _loadSettings();
     await _loadAvailableVoices();
     await _applySettings();
@@ -86,63 +92,64 @@ class VoiceServiceNew {
     if (_availableVoices.isEmpty) {
       await _loadAvailableVoices();
     }
-    
+
     final isMale = _voiceType == VoiceType.male1 || _voiceType == VoiceType.male2;
     final baseLanguage = _language.split('-')[0];
-    
-    // Find voices matching the current language
+
+
+
     final matchingVoices = _availableVoices.where((voice) {
       final locale = voice['locale']?.toString() ?? '';
       return locale.startsWith(baseLanguage) || locale.startsWith(_language);
     }).toList();
-    
+
     if (matchingVoices.isEmpty) return;
-    
-    // Try to find voice matching gender preference
+
     dynamic selectedVoice;
-    
+
+    // First pass: exact gender name match
     for (final voice in matchingVoices) {
       final name = voice['name']?.toString().toLowerCase() ?? '';
-      
-      if (isMale) {
-        // Look for male voice indicators
-        if (name.contains('male') && !name.contains('female')) {
-          selectedVoice = voice;
-          break;
-        }
-      } else {
-        // Look for female voice indicators
-        if (name.contains('female')) {
+      if (isMale && name.contains('male') && !name.contains('female')) {
+        selectedVoice = voice;
+        break;
+      }
+      if (!isMale && name.contains('female')) {
+        selectedVoice = voice;
+        break;
+      }
+    }
+
+    // Second pass: quality-based fallback (prefer enhanced/network voices)
+    if (selectedVoice == null) {
+      for (final voice in matchingVoices) {
+        final name = voice['name']?.toString().toLowerCase() ?? '';
+        if (name.contains('enhanced') || name.contains('network') || name.contains('premium')) {
           selectedVoice = voice;
           break;
         }
       }
     }
-    
-    // If no gender-specific voice found, use first available voice for language
+
     selectedVoice ??= matchingVoices.first;
-    
+
     try {
       await _tts.setVoice({
-        "name": selectedVoice['name'],
-        "locale": selectedVoice['locale']
+        'name': selectedVoice['name'],
+        'locale': selectedVoice['locale'],
       });
       _selectedVoice = selectedVoice['name'];
-    } catch (e) {
-      // Voice setting failed, will use default
-    }
+    } catch (_) {}
   }
   
+  bool get _isEnglish => _language.startsWith('en');
+
   double _getVoiceTypePitch() {
     switch (_voiceType) {
-      case VoiceType.male1:
-        return 0.5;
-      case VoiceType.male2:
-        return 0.65;
-      case VoiceType.female1:
-        return 1.1;
-      case VoiceType.female2:
-        return 1.2;
+      case VoiceType.male1:   return 0.85;
+      case VoiceType.male2:   return 0.92;
+      case VoiceType.female1: return 1.0;
+      case VoiceType.female2: return 1.05;
     }
   }
 
@@ -201,7 +208,9 @@ class VoiceServiceNew {
 
   Future<void> setVoiceType(VoiceType type) async {
     _voiceType = type;
+    _initialized = false; // allow re-init so new voice type is applied
     await _applySettings();
+    _initialized = true;
     await _saveSettings();
   }
   
@@ -216,10 +225,33 @@ class VoiceServiceNew {
     await _saveSettings();
   }
 
+  Future<void> _applyGenderToTts() async {
+    await _tts.setPitch(_getVoiceTypePitch());
+    await _tts.setSpeechRate(_speechRate);
+    await _tts.setVolume(_volume);
+    // Force correct gender voice name on TTS engine
+    await _setVoiceForLanguageAndType();
+  }
+
   Future<void> speak(String text) async {
     if (!_enabled || text.isEmpty || _announcementMode == AnnouncementMode.silent) return;
     if (!shouldPlayVoice) return;
+
+    if (_isEnglish) {
+      await _tts.stop();
+      final played = await _englishVoice.play(text, _voiceType, _volume);
+      if (played) return;
+      // No MP3 clip for this text — use TTS but re-apply gender first
+      await _englishVoice.stop();
+      await _applyGenderToTts();
+      await _tts.speak(text);
+      return;
+    }
+
+    // Non-English — TTS only
+    await _englishVoice.stop();
     await _tts.stop();
+    await _applyGenderToTts();
     await _tts.speak(text);
   }
   
@@ -317,7 +349,13 @@ class VoiceServiceNew {
     return speak('Workout complete! You finished $name in $timeStr. Great job!');
   }
 
-  Future<void> stop() => _tts.stop();
+  Future<void> stop() async {
+    _englishVoice.stop();
+    await _tts.stop();
+  }
 
-  Future<void> dispose() => _tts.stop();
+  Future<void> dispose() async {
+    await _englishVoice.dispose();
+    await _tts.stop();
+  }
 }
